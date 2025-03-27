@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YOLO Object Detection</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #222;
+            color: white;
+        }
+
+        h1 {
+            margin-bottom: 10px;
+        }
+
+        #video-container {
+            position: relative;
+            display: inline-block;
+        }
+
+        #video-frame {
+            border: 3px solid white;
+            max-width: 100%;
+            max-height: 70vh;
+        }
+
+        .object-btn {
+            position: absolute;
+            background: rgba(0, 0, 0, 0);
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 14px;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: background 0.3s ease;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>YOLO Object Detection</h1>
+    <p>Chọn model YOLO:</p>
+    <select id="model-selector">
+        <option value="v9">YOLO v9</option>
+        <option value="v10" selected>YOLO v10</option>
+        <option value="v11">YOLO v11</option>
+        <option value="v12">YOLO v12</option>
+    </select>
+
+    <button id="connect-btn">🔄 Kết nối</button>
+    <button id="disconnect-btn" style="display: none;">❌ Ngắt kết nối</button>
+
+    <div id="video-container">
+        <img id="video-frame" src="" alt="Camera Feed">
+    </div>
+
+    <p id="status">Chưa kết nối WebSocket...</p>
+
+    <script>
+        let socket = null;
+        const videoFrame = document.getElementById("video-frame");
+        const statusText = document.getElementById("status");
+        const videoContainer = document.getElementById("video-container");
+        const connectBtn = document.getElementById("connect-btn");
+        const disconnectBtn = document.getElementById("disconnect-btn");
+        const modelSelector = document.getElementById("model-selector");
+
+        function connectWebSocket() {
+            const modelType = modelSelector.value;
+            socket = new WebSocket(`ws://localhost:8000/ws/${modelType}`);
+
+            socket.binaryType = "blob"; // Nhận ảnh dưới dạng binary
+
+            socket.onopen = function () {
+                statusText.textContent = `✅ Đã kết nối với YOLO ${modelType}`;
+                connectBtn.style.display = "none";
+                disconnectBtn.style.display = "inline-block";
+            };
+
+            socket.onmessage = function (event) {
+                if (typeof event.data === "string") {
+                    let data = JSON.parse(event.data);
+                    updateObjectButtons(data.objects);
+                } else if (event.data instanceof Blob) {
+                    let imgUrl = URL.createObjectURL(event.data);
+                    videoFrame.src = imgUrl;
+                }
+            };
+
+            socket.onclose = function () {
+                statusText.textContent = "⚠️ Kết nối WebSocket bị đóng, đang thử kết nối lại...";
+                connectBtn.style.display = "inline-block";
+                disconnectBtn.style.display = "none";
+                removeObjectButtons();
+                setTimeout(connectWebSocket, 3000); // Tự động kết nối lại sau 3s
+            };
+
+            socket.onerror = function () {
+                statusText.textContent = "❌ Lỗi kết nối WebSocket!";
+            };
+        }
+
+        function disconnectWebSocket() {
+            if (socket) {
+                socket.onclose = null; // Ngăn tự động kết nối lại
+                socket.close();
+                socket = null;
+                statusText.textContent = "⚠️ Đã ngắt kết nối WebSocket";
+                removeObjectButtons();
+            }
+        }
+
+        function updateObjectButtons(objects) {
+            removeObjectButtons();
+            objects.forEach(obj => {
+                let btn = document.createElement("button");
+                btn.classList.add("object-btn");
+                btn.style.left = `${obj.x}px`; //left
+                btn.style.top = `${obj.y - 25}px`;// 
+                btn.innerHTML = `🔊 ${obj.label}`;
+                btn.onclick = () => speak(obj.label);
+                videoContainer.appendChild(btn);
+            });
+        }
+
+        function removeObjectButtons() {
+            document.querySelectorAll(".object-btn").forEach(btn => btn.remove());
+        }
+
+        function speak(text) {
+            let speech = new SpeechSynthesisUtterance(text);
+            speech.lang = "en-US";
+            window.speechSynthesis.speak(speech);
+        }
+
+        connectBtn.addEventListener("click", connectWebSocket);
+        disconnectBtn.addEventListener("click", disconnectWebSocket);
+    </script>
+
+</body>
+
+</html>

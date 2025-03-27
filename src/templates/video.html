@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YOLO Object Detection</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #222;
+            font-family: Arial, sans-serif;
+            color: #fff;
+        }
+        h1 {
+            margin-bottom: 20px;
+        }
+        #controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        select, button {
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: none;
+            background-color: #555;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #777;
+        }
+        #video-container {
+            position: relative;
+            width: 640px;
+            height: 480px;
+            border: 3px solid #fff;
+            background-color: #000;
+            padding: 10px;
+            border-radius: 10px;
+        }
+        img {
+            width: 640px;
+            height: 480px;
+            border-radius: 5px;
+        }
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 640px;
+            height: 480px;
+        }
+        #status {
+            margin-top: 15px;
+            font-weight: bold;
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <h1>YOLO Object Detection</h1>
+    <div id="controls">
+        <label for="model-select">Choose Model:</label>
+        <select id="model-select">
+            <option value="v9">YOLO v9</option>
+            <option value="v10">YOLO v10</option>
+            <option value="v11">YOLO v11</option>
+            <option value="v12">YOLO v12</option>
+        </select>
+        <button id="start-btn">Start Detection</button>
+        <button id="end-btn">End Detection</button>
+    </div>
+    <div id="video-container">
+        <img id="video-stream" src="" alt="Live Detection Feed">
+        <canvas id="bounding-boxes"></canvas>
+    </div>
+    <p id="status">Disconnected</p>
+
+    <script>
+        let ws;
+        const modelSelect = document.getElementById("model-select");
+        const startBtn = document.getElementById("start-btn");
+        const endBtn = document.getElementById("end-btn");
+        const videoStream = document.getElementById("video-stream");
+        const statusText = document.getElementById("status");
+        const canvas = document.getElementById("bounding-boxes");
+        const ctx = canvas.getContext("2d");
+
+
+        function startWebSocket(model) { 
+            ws = new WebSocket(`ws://localhost:8000/ws/${model}`);
+            
+            ws.onopen = function () {
+                statusText.textContent = "Connected";
+                statusText.style.color = "green";
+            };
+            
+            ws.onmessage = function (event) {
+                const data = JSON.parse(event.data);
+                const image = new Image();
+                
+                // Cập nhật video stream
+                videoStream.src = "data:image/jpeg;base64," + data.image;
+
+                drawBoundingBoxes();
+            };
+            
+            ws.onclose = function () {
+                statusText.textContent = "Disconnected";
+                statusText.style.color = "red";
+                objects = [];
+                clearCanvas();
+            };
+        }
+
+        function drawBoundingBoxes() {
+            clearCanvas();
+            canvas.width = videoStream.width;
+            canvas.height = videoStream.height;
+
+            ctx.strokeStyle = "red";
+            ctx.lineWidth = 2;
+            ctx.font = "16px Arial";
+            ctx.fillStyle = "yellow";
+
+            objects.forEach(obj => {
+                ctx.strokeRect(obj.x1, obj.y1, obj.x2 - obj.x1, obj.y2 - obj.y1);
+                ctx.fillText(obj.label_vi, obj.x1, obj.y1 - 5);
+            });
+        }
+
+        function clearCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function checkClick(event) {
+            const rect = videoStream.getBoundingClientRect();
+            const clickX = event.clientX - rect.left;
+            const clickY = event.clientY - rect.top;
+
+        }
+        
+        startBtn.addEventListener("click", () => {
+            const selectedModel = modelSelect.value;
+            startWebSocket(selectedModel);
+        });
+        
+        endBtn.addEventListener("click", () => {
+            if (ws) {
+                ws.close();
+            }
+        });
+    </script>
+</body>
+</html>
