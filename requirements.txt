@@ -9,3 +9,4 @@ httpcore==1.0.7
 googletrans==4.0.2
 google-generativeai==0.8.4
 ffmpeg==1.4
+gunicorn==23.0.0
