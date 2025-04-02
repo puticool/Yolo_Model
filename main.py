@@ -18,4 +18,4 @@ src.add_api_route("/audio",generate_audio_endpoint , methods=["POST"])
 src.add_api_route("/", read_root)
 
 if __name__ == "__main__":
-    uvicorn.run("main:src", host="127.0.0.1", port=7000, reload=True)
+    uvicorn.run("main:src", host="0.0.0.0", port=7000, reload=True)
