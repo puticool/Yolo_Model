@@ -2,29 +2,99 @@
 <html>
 <head>
     <title>WebSocket Test</title>
+    <style>
+        #videoFeed {
+            display: block;
+            width: 100%;
+            max-width: 640px;
+        }
+        .video-container {
+            position: relative;
+            display: inline-block;
+        }
+        .object-btn {
+            position: absolute;
+            background-color: rgba(0, 128, 255, 0.8);
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .object-btn:hover {
+            background-color: rgba(0, 128, 255, 1);
+        }
+    </style>
 </head>
 <body>
     <h1>Real-time Camera Feed</h1>
     <img id="videoFeed" src="" alt="Camera Feed">
     <script>
-        const ws = new WebSocket("ws://127.0.0.1:8000/ws/");
+        const ws = new WebSocket("ws://127.0.0.1:8000/ws/{model_type}");
         
+        const videoFeed = document.getElementById("videoFeed");
+        const videoContainer = document.createElement("div");
+        videoContainer.classList.add("video-container");
+        videoContainer.appendChild(videoFeed);
+        document.body.appendChild(videoContainer);
+
         ws.onopen = function() {
             console.log("WebSocket connection opened");
         };
 
         ws.onmessage = function(event) {
             const data = JSON.parse(event.data);
-            document.getElementById("videoFeed").src = "data:image/jpeg;base64," + data.image;
+            console.log("Dữ liệu nhận được:", data);
+            if (!data.image) return;
+            videoFeed.src = "data:image/jpeg;base64," + data.image;
+            if (data.objects && Array.isArray(data.objects)) {
+                updateObjectButtons(data.objects);
+            }
         };
 
         ws.onclose = function() {
             console.log("WebSocket connection closed");
+            alert("Mất kết nối đến server!");
         };
 
         ws.onerror = function(error) {
-            console.error("WebSocket error:", error);
+            console.log("WebSocket error:", error);
         };
+
+        function removeObjectButtons() {
+            const buttons = document.querySelectorAll(".object-btn");
+            buttons.forEach(btn => btn.remove());
+        }
+
+        function speak(text) {
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = "en-US";
+                window.speechSynthesis.speak(utterance);
+            } else {
+                console.log("Trình duyệt không hỗ trợ SpeechSynthesis");
+            }
+        }
+
+        function updateObjectButtons(objects) {
+            console.log("Đang cập nhật nút cho các đối tượng:", objects);
+            removeObjectButtons();
+            const maxWidth = videoFeed.width || 640;
+            const maxHeight = videoFeed.height || 480;
+            objects.forEach(obj => {
+                if (!obj.x || !obj.y || !obj.label) {
+                    console.log("Dữ liệu đối tượng không hợp lệ:", obj);
+                    return;
+                }
+                let btn = document.createElement("button");
+                btn.classList.add("object-btn");
+                btn.style.left = `${Math.min(Math.max(0, obj.x), maxWidth - 50)}px`;
+                btn.style.top = `${Math.min(Math.max(0, obj.y - 25), maxHeight - 25)}px`;
+                btn.innerHTML = `🔊 ${obj.label}`;
+                btn.onclick = () => speak(obj.label);
+                videoContainer.appendChild(btn);
+            });
+        }
     </script>
 </body>
 </html>
