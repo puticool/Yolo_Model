@@ -1,0 +1,11 @@
+uvicorn=0.34.0
+fastapi=0.115.11
+asyncio=3.4.3
+ultralytics=8.3.61
+numpy=1.26.4
+gTTS=2.5.4
+websockets=15.0.1
+httpcore=1.0.7
+googletrans=4.0.2
+google-generativeai=0.8.4
+ffmpeg=1.4

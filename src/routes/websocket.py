@@ -60,11 +60,6 @@ async def handle_client(websocket: WebSocket):
             ret, frame = cap.read()
             if not ret:
                 break
-            
-            frame_count += 1
-            if frame_count % 3 != 0:  # Chỉ xử lý mỗi 3 khung hình
-                    continue
-
             # Chạy YOLO
             results = model(frame)
             detected_objects = []
