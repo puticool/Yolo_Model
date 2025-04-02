@@ -1,0 +1,211 @@
+{% comment %} <!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pronunciation Checker</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f4f4f4;
+      }
+      h2 {
+        text-align: center;
+        color: #333;
+      }
+      .form-container,
+      .result-container {
+        background-color: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+      }
+      label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: bold;
+      }
+      input[type="file"],
+      input[type="text"] {
+        width: 100%;
+        padding: 8px;
+        margin-bottom: 16px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+      }
+      button {
+        background-color: #007bff;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      button:hover {
+        background-color: #0056b3;
+      }
+      .result-container {
+        display: none;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+      }
+      th,
+      td {
+        padding: 10px;
+        border: 1px solid #ddd;
+        text-align: left;
+      }
+      th {
+        background-color: #007bff;
+        color: white;
+      }
+      audio {
+        width: 100%;
+        margin-top: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Pronunciation Checker</h2>
+
+    <!-- Form để tải file âm thanh và nhập câu mẫu -->
+    <div class="form-container">
+      <form id="uploadForm">
+        <label for="sample_sentence">Sample Sentence:</label>
+        <input
+          type="text"
+          id="sample_sentence"
+          name="sample_sentence"
+          required
+        />
+
+        <label for="audio_file">Upload Audio File (mp3, m4a, wav):</label>
+        <input
+          type="file"
+          id="audio_file"
+          name="audio_file"
+          accept="audio/*"
+          required
+        />
+
+        <button type="submit">Check Pronunciation</button>
+      </form>
+    </div>
+
+    <!-- Khu vực hiển thị kết quả dưới dạng bảng -->
+    <div class="result-container" id="result-container">
+      <h3>Response:</h3>
+      <table id="result-table">
+        <thead>
+          <tr>
+            <th>Field</th>
+            <th>Value</th>
+          </tr>
+        </thead>
+        <tbody id="result-body">
+          <!-- Dữ liệu sẽ được thêm bằng JavaScript -->
+        </tbody>
+      </table>
+      <p><strong>Listen to Recognized Text:</strong></p>
+      <audio controls id="tts-audio"></audio>
+    </div>
+
+    <script>
+      const form = document.getElementById("uploadForm");
+      const resultContainer = document.getElementById("result-container");
+      const resultBody = document.getElementById("result-body");
+      const ttsAudioElement = document.getElementById("tts-audio");
+
+      form.addEventListener("submit", async function (event) {
+        event.preventDefault();
+
+        const formData = new FormData();
+        formData.append(
+          "sample_sentence",
+          document.getElementById("sample_sentence").value
+        );
+        formData.append("file", document.getElementById("audio_file").files[0]);
+
+        try {
+          const response = await fetch("http://127.0.0.1:7000/pronunciation", {
+            method: "POST",
+            body: formData,
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(
+              `HTTP error! Status: ${response.status}, Detail: ${errorData.detail}`
+            );
+          }
+
+          const result = await response.json();
+
+          // Xóa dữ liệu cũ trong bảng
+          resultBody.innerHTML = "";
+
+          // Thêm dữ liệu vào bảng
+          const fields = [
+            { key: "Recognized Text", value: result.recognized_text || "N/A" },
+            { key: "Sample Sentence", value: result.sample_sentence || "N/A" },
+            {
+              key: "Accuracy",
+              value:
+                result.accuracy !== undefined
+                  ? (result.accuracy * 100).toFixed(2) + "%"
+                  : "N/A",
+            },
+            { key: "Feedback", value: result.pronunciation_feedback || "N/A" },
+            {
+              key: "Differences",
+              value: result.differences
+                ? JSON.stringify(result.differences, null, 2)
+                : "N/A",
+            },
+          ];
+
+          fields.forEach((field) => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                        <td>${field.key}</td>
+                        <td>${field.value}</td>
+                    `;
+            resultBody.appendChild(row);
+          });
+
+          // Phát âm thanh TTS nếu có
+          if (result.tts_audio_base64) {
+            ttsAudioElement.src = `data:audio/mp3;base64,${result.tts_audio_base64}`;
+            ttsAudioElement.style.display = "block";
+          } else {
+            ttsAudioElement.src = "";
+            ttsAudioElement.style.display = "none";
+          }
+
+          // Hiển thị container kết quả
+          resultContainer.style.display = "block";
+        } catch (error) {
+          console.error("Fetch error:", error);
+          resultBody.innerHTML = `
+                    <tr>
+                        <td>Error</td>
+                        <td>${error.message}</td>
+                    </tr>
+                `;
+          ttsAudioElement.style.display = "none";
+          resultContainer.style.display = "block";
+        }
+      });
+    </script>
+  </body>
+</html> {% endcomment %}
+
+
+

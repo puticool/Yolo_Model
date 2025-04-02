@@ -63,7 +63,7 @@ async def handle_client(websocket: WebSocket):
             # Chạy YOLO
             results = model(frame)
             detected_objects = []
-            
+           
             # Vẽ kết quả nhận diện
             for result in results:
                 if hasattr(result, 'boxes') and result.boxes is not None:
@@ -88,7 +88,7 @@ async def handle_client(websocket: WebSocket):
                         color = get_color_from_label(label)
                         cv2.rectangle(frame, (x1, y1), (x2, y2), color, 4)
                         frame = draw_text_on_frame(frame, x1, y1, label, label_vi, color)
-                        
+                       
             # Gửi frame qua WebSocket
             frame_data = frame_to_binary(frame)
             await websocket.send_bytes(frame_data)

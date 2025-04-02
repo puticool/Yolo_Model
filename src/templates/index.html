@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kiểm Tra Phát Âm - English</title>
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --error-color: #dc2626;
+            --success-color: #16a34a;
+            --warning-color: #d97706;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+        }
+
+        .drag-drop-area {
+            border: 2px dashed #cbd5e1;
+            border-radius: 0.75rem;
+            padding: 2rem;
+            text-align: center;
+            margin-bottom: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .drag-drop-area.dragover {
+            border-color: var(--primary-color);
+            background-color: #eff6ff;
+        }
+
+        .audio-preview {
+            margin-top: 1rem;
+            font-size: 0.875rem;
+            color: #64748b;
+        }
+
+        .result-section {
+            margin-top: 2rem;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .result-section.show {
+            opacity: 1;
+        }
+
+        .accuracy-badge {
+            font-size: 1.875rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            text-align: center;
+            margin: 1.5rem 0;
+        }
+
+        .difference-card {
+            background: #f8fafc;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+
+        .difference-item {
+            padding: 0.5rem;
+            margin: 0.25rem 0;
+            border-radius: 0.25rem;
+        }
+
+        .replace { background: #fef9c3; color: #854d0e; }
+        .delete { background: #fee2e2; color: #991b1b; }
+        .insert { background: #dcfce7; color: #166534; }
+
+        .audio-player-group {
+            margin: 1.5rem 0;
+        }
+
+        .spinner {
+            animation: spin 1s linear infinite;
+            width: 2rem;
+            height: 2rem;
+            border: 3px solid #e2e8f0;
+            border-top-color: var(--primary-color);
+            border-radius: 50%;
+            margin: 2rem auto;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center">🎤 English Pronunciation Checker</h1>
+        
+        <div class="drag-drop-area" id="dropZone">
+            <form id="uploadForm">
+                <div class="form-group">
+                    <input type="file" id="audioInput" accept="audio/*" hidden>
+                    <label for="audioInput" class="upload-label">
+                        <div class="drag-drop-content">
+                            <p>📁 Kéo thả file audio vào đây hoặc click để chọn</p>
+                            <p class="audio-preview" id="fileName"></p>
+                        </div>
+                    </label>
+                </div>
+                
+                <div class="form-group">
+                    <textarea 
+                        id="sentenceInput" 
+                        placeholder="Nhập câu mẫu cần kiểm tra..."
+                        class="sentence-input"
+                        rows="3"
+                    ></textarea>
+                </div>
+
+                <button type="submit" class="submit-btn">
+                    🔍 Kiểm tra phát âm
+                </button>
+            </form>
+        </div>
+
+        <div class="loading-indicator" id="loading">
+            <div class="spinner"></div>
+            <p>Đang phân tích phát âm...</p>
+        </div>
+
+        <div class="result-section" id="resultSection">
+            <div class="accuracy-badge" id="accuracyBadge"></div>
+            
+            <div class="feedback-card">
+                <h3>📝 Nhận xét phát âm</h3>
+                <p id="feedbackText"></p>
+            </div>
+
+            <div class="comparison-grid">
+                <div class="original-text">
+                    <h4>📖 Câu mẫu</h4>
+                    <div id="sampleSentence"></div>
+                </div>
+                <div class="recognized-text">
+                    <h4>🎙 Bản nhận dạng</h4>
+                    <div id="recognizedText"></div>
+                </div>
+            </div>
+
+            <div class="differences-section">
+                <h4>🔍 Chi tiết lỗi</h4>
+                <div id="differencesList"></div>
+            </div>
+
+            <div class="audio-players">
+                <div class="audio-player-group">
+                    <h4>🎧 Bản gốc</h4>
+                    <audio controls id="originalAudio"></audio>
+                </div>
+                <div class="audio-player-group">
+                    <h4>📢 Bản nhận dạng</h4>
+                    <audio controls id="recognizedAudio"></audio>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_ENDPOINT = 'http://127.0.0.1:7000/pronunciation';
+        
+        const form = document.getElementById('uploadForm');
+        const audioInput = document.getElementById('audioInput');
+        const dropZone = document.getElementById('dropZone');
+        const fileName = document.getElementById('fileName');
+        const loading = document.getElementById('loading');
+        const resultSection = document.getElementById('resultSection');
+
+        // Xử lý drag and drop
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files[0]) {
+                audioInput.files = files;
+                fileName.textContent = files[0].name;
+            }
+        });
+
+        // Xử lý chọn file
+        audioInput.addEventListener('change', () => {
+            if (audioInput.files[0]) {
+                fileName.textContent = audioInput.files[0].name;
+            }
+        });
+
+        // Gửi form
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!audioInput.files[0] || !document.getElementById('sentenceInput').value) {
+                alert('Vui lòng chọn file audio và nhập câu mẫu');
+                return;
+            }
+
+            loading.style.display = 'block';
+            resultSection.classList.remove('show');
+
+            const formData = new FormData();
+            formData.append('file', audioInput.files[0]);
+            formData.append('sample_sentence', document.getElementById('sentenceInput').value);
+
+            try {
+                const response = await fetch(API_ENDPOINT, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await handleResponse(response);
+                updateUI(data);
+                
+            } catch (error) {
+                handleError(error);
+            } finally {
+                loading.style.display = 'none';
+            }
+        });
+
+        async function handleResponse(response) {
+            const text = await response.text();
+            
+            if (!response.ok) {
+                try {
+                    const errorData = JSON.parse(text);
+                    throw new Error(errorData.detail || 'Lỗi không xác định');
+                } catch {
+                    throw new Error(text || 'Lỗi kết nối');
+                }
+            }
+
+            return JSON.parse(text);
+        }
+
+        function updateUI(data) {
+            // Cập nhật độ chính xác
+            document.getElementById('accuracyBadge').textContent = 
+                `${(data.accuracy * 100).toFixed(1)}% Accuracy`;
+
+            // Cập nhật nhận xét
+            document.getElementById('feedbackText').textContent = 
+                data.pronunciation_feedback;
+
+            // Hiển thị câu mẫu và bản nhận dạng
+            document.getElementById('sampleSentence').textContent = 
+                data.sample_sentence;
+            document.getElementById('recognizedText').textContent = 
+                data.recognized_text;
+
+            // Hiển thị lỗi
+            const differencesList = document.getElementById('differencesList');
+            differencesList.innerHTML = '';
+            data.differences.forEach(diff => {
+                const div = document.createElement('div');
+                div.className = `difference-item ${diff.type}`;
+                div.textContent = getDifferenceText(diff);
+                differencesList.appendChild(div);
+            });
+
+            // Cập nhật audio
+            document.getElementById('originalAudio').src = 
+                `data:audio/mp3;base64,${data.audio_base64}`;
+            document.getElementById('recognizedAudio').src = 
+                `data:audio/mp3;base64,${data.tts_audio_base64}`;
+
+            resultSection.classList.add('show');
+        }
+
+        function getDifferenceText(diff) {
+            switch(diff.type) {
+                case 'replace':
+                    return `✖ Thay thế: "${diff.original.join(' ')}" → "${diff.recognized.join(' ')}"`;
+                case 'delete':
+                    return `❌ Thiếu từ: "${diff.original.join(' ')}"`;
+                case 'insert':
+                    return `➕ Thêm từ: "${diff.recognized.join(' ')}"`;
+                default:
+                    return '';
+            }
+        }
+
+        function handleError(error) {
+            alert(`Error: ${error.message}`);
+            console.error('Error details:', error);
+        }
+    </script>
+</body>
+</html>
