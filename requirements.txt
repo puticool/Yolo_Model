@@ -13,3 +13,5 @@ gunicorn==23.0.0
 python-multipart==0.0.20
 SpeechRecognition==3.14.0
 pydub==0.25.1
+pyttsx3==2.98
+pydantic==2.10.6
