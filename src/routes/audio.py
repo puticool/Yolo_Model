@@ -9,7 +9,7 @@ from pydantic import BaseModel
 app = FastAPI()
 
 # Đường dẫn thư mục lưu file audio tạm thời
-AUDIO_DIR = r"C:\quangkhai\Yolo_Model2\src\assets\audio"
+AUDIO_DIR = r"src\assets\audio"
 
 # Đảm bảo thư mục tồn tại, nếu không thì tạo mới
 os.makedirs(AUDIO_DIR, exist_ok=True)

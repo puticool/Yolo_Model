@@ -11,7 +11,7 @@ import random
 
 router = APIRouter()
 
-AUDIO_DIR = r"C:\quangkhai\Yolo_Model2\src\assets\audio"
+AUDIO_DIR = r"src\assets\audio"
 os.makedirs(AUDIO_DIR, exist_ok=True)
 
 # Cấu hình FFmpeg
