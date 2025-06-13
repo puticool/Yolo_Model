@@ -52,11 +52,11 @@ async def generate_audio_endpoint(request: AudioRequest):
     except Exception as e:
         return JSONResponse({"error": f"Failed to read audio file: {str(e)}"}, status_code=500)
     
-    # Xóa file tạm sau khi mã hóa (tùy chọn)
-    # try:
-    #     os.remove(audio_path)
-    # except Exception as e:
-    #     print(f"Warning: Could not delete temporary file {audio_path}: {str(e)}")
+    #Xóa file tạm sau khi mã hóa (tùy chọn)
+    try:
+        os.remove(audio_path)
+    except Exception as e:
+        print(f"Warning: Could not delete temporary file {audio_path}: {str(e)}")
     
     # Trả về phản hồi JSON với word và Base64
     return JSONResponse({
