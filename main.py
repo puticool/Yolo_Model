@@ -34,4 +34,4 @@ if __name__ == "__main__":
     public_url = ngrok.connect(7000).public_url
     print(f"🚀 Ngrok tunnel: {public_url}")
 
-    uvicorn.run("main:src", host="127.0.0.1", port=7000, reload=True)
+    uvicorn.run("main:src", host="0.0.0.0", port=7000, reload=True)
