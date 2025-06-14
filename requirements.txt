@@ -17,3 +17,4 @@ pyttsx3==2.98
 pydantic==2.10.6
 dotenv==0.9.9
 pyngrok==7.2.3
+whisper==1.1.10
