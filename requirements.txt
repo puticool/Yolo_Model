@@ -1,5 +1,5 @@
 uvicorn==0.34.0
-fastapi==0.115.11
+fastapi==0.115.12
 asyncio==3.4.3
 ultralytics==8.3.61
 numpy==1.26.4
