@@ -1,22 +1,22 @@
 FROM python:3.11-slim
 
-# Cài đặt các thư viện cần thiết cho OpenCV và các package khác
+# Cài ffmpeg và các thư viện cần thiết
 RUN apt-get update && \
     apt-get install -y gcc libgl1-mesa-glx libglib2.0-0 ffmpeg && \
     rm -rf /var/lib/apt/lists/*
 
-# Thiết lập thư mục làm việc
-WORKDIR /src
+# Đặt thư mục làm việc
+WORKDIR /app
 
-# Copy requirements và cài đặt
+# Copy file requirements.txt và cài thư viện Python
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy toàn bộ mã nguồn vào container
+# Copy toàn bộ mã nguồn
 COPY . .
 
-# Expose port
+# Mở cổng 8000 (Railway sẽ tự ánh xạ)
 EXPOSE 8000
 
-# Chạy ứng dụng FastAPI với Uvicorn
-CMD ["uvicorn", "main:src", "--host", "0.0.0.0", "--port", "8000"]
+# Chạy ứng dụng FastAPI (vì bạn để app trong main.py)
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
