@@ -161,7 +161,13 @@ async def pronunciation_check(
  
     # Tạo âm thanh từ recognized_text đã bỏ dấu chấm
     tts_audio_path, tts_audio_base64 = text_to_speech(recognized_text_cleaned)
- 
+    
+    # Xóa file tạm sau khi xử lý xong
+    if os.path.exists(audio_path):
+        os.remove(audio_path)
+    if os.path.exists(wav_path):
+        os.remove(wav_path)
+        
     response_data = {
         "recognized_text": recognized_text_cleaned,
         "sample_sentence": sample_sentence,
