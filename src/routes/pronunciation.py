@@ -16,9 +16,8 @@ AUDIO_DIR = r"src\assets\audio"
 os.makedirs(AUDIO_DIR, exist_ok=True)
  
 # Cấu hình FFmpeg
-AudioSegment.converter = r"C:\ffmpeg\ffmpeg.exe"
-AudioSegment.ffmpeg = r"C:\ffmpeg\ffmpeg.exe"
-AudioSegment.ffprobe = r"C:\ffmpeg\ffprobe.exe"
+AudioSegment.ffmpeg = "ffmpeg"
+AudioSegment.ffprobe = "ffprobe"
  
 def convert_to_pcm_wav(input_path: str, output_path: str) -> str:
     try:
