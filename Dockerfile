@@ -6,7 +6,7 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # Thiết lập thư mục làm việc
-WORKDIR /app
+WORKDIR /src
 
 # Copy requirements và cài đặt
 COPY requirements.txt .
